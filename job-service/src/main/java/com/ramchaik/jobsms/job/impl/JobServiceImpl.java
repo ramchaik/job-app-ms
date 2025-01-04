@@ -9,12 +9,8 @@ import com.ramchaik.jobsms.job.dto.JobDTO;
 import com.ramchaik.jobsms.job.external.Company;
 import com.ramchaik.jobsms.job.external.Review;
 import com.ramchaik.jobsms.job.mapper.JobMapper;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 
@@ -31,6 +27,7 @@ public class JobServiceImpl implements JobService {
     }
 
     @Override
+    @CircuitBreaker(name = "companyBreaker")
     public List<JobDTO> findAll() {
         List<Job> jobs = jobRepository.findAll();
         return  jobs.stream().map(this::convertToDto).toList();
