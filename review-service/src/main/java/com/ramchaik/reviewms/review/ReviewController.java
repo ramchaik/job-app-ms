@@ -1,5 +1,7 @@
 package com.ramchaik.reviewms.review;
 
+import com.ramchaik.reviewms.review.dto.ReviewMessage;
+import com.ramchaik.reviewms.review.messaging.ReviewMessageProducer;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -10,9 +12,11 @@ import java.util.List;
 @RequestMapping("/reviews")
 public class ReviewController {
     private ReviewService reviewService;
+    private ReviewMessageProducer reviewMessageProducer;
 
-    public ReviewController(ReviewService reviewService) {
+    public ReviewController(ReviewService reviewService, ReviewMessageProducer reviewMessageProducer) {
         this.reviewService = reviewService;
+        this.reviewMessageProducer = reviewMessageProducer;
     }
 
     @GetMapping
@@ -21,11 +25,18 @@ public class ReviewController {
         return new ResponseEntity<>(reviews, HttpStatus.OK);
     }
 
+    @GetMapping("/averageRating")
+    public Double getAverageRatingForCompany(@RequestParam Long companyId) {
+        List<Review> reviews = reviewService.getReviewsForCompany(companyId);
+        return reviews.stream().mapToDouble(Review::getRating).average().orElse(0.0);
+    }
+
     @PostMapping
     public ResponseEntity<String> createReview(
             @RequestBody Review review
     ) {
         reviewService.createReview(review);
+        reviewMessageProducer.sendMessage(review);
         return new ResponseEntity<>("Created successfully", HttpStatus.CREATED);
     }
 
