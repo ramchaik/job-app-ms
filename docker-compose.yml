@@ -1,6 +1,89 @@
 services:
-  pg_db:
-    container_name: pg_db
+  gateway:
+    image: docker.io/vsramchaik/gateway:latest
+    container_name: gateway
+    ports:
+      - 8084:8084
+    depends_on:
+      - servicereg
+    networks:
+      - microservice-network
+      - postgres
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+
+  config-server:
+    image: docker.io/vsramchaik/config-server
+    container_name: config-server
+    ports:
+      - 8080:8080
+    depends_on:
+      - servicereg
+    networks:
+      - microservice-network
+      - postgres
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+
+  servicereg:
+    image: docker.io/vsramchaik/servicereg
+    container_name: servicereg
+    ports:
+      - 8761:8761
+    depends_on:
+      - rabbitmq
+      - zipkin
+      - postgres
+      - pgadmin
+    networks:
+      - microservice-network
+      - postgres
+
+  company:
+    image: docker.io/vsramchaik/company:latest
+    container_name: company
+    ports:
+      - 8081:8081
+    depends_on:
+      - servicereg
+      - config-server
+    networks:
+      - microservice-network
+      - postgres
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+
+  job:
+    image: docker.io/vsramchaik/job:latest
+    container_name: job
+    ports:
+      - 8082:8082
+    depends_on:
+      - servicereg
+      - config-server
+    networks:
+      - microservice-network
+      - postgres
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://servicereg:8761/eureka
+
+  review:
+    image: docker.io/vsramchaik/review:latest
+    container_name: review
+    ports:
+      - 8083:8083
+    depends_on:
+      - servicereg
+      - config-server
+    networks:
+      - microservice-network
+      - postgres
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+
+  postgres:
+    container_name: postgres
     image: postgres
     environment:
       POSTGRES_USER: admin
@@ -21,7 +104,7 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: vaibhav@pgadmin.org
       PGADMIN_DEFAULT_PASSWORD: admin
-      PGADMIN_CONFIG_SERVER_MODE: False
+      PGADMIN_CONFIG_SERVER_MODE: "False"
     volumes:
       - pgadmin:/var/lib/pgadmin
     ports:
@@ -48,6 +131,8 @@ services:
       - postgres
 
 networks:
+  microservice-network:
+    driver: bridge
   postgres:
     driver: bridge
 
