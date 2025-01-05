@@ -10,11 +10,11 @@ spec:
     app: rabbitmq
   type: NodePort
   ports:
-    - protocol: amqp
+    - name: amqp
       port: 5672
       targetPort: 5672
       nodePort: 30500
-    - protocol: management
+    - name: management
       port: 15672
       targetPort: 15672
       nodePort: 30501
